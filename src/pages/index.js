@@ -4,7 +4,7 @@ const { Configuration, OpenAIApi } = require('openai');
 export default function Home({ data }) {
 
   /*
-  1 API CALL APPROACH - PROBLEMS WITH TOKEN LIMIT
+  MULTIPLE API CALLS APPROACH
   */
 
 	console.log(data);
