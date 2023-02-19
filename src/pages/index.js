@@ -2,7 +2,20 @@ import Head from 'next/head';
 const { Configuration, OpenAIApi } = require('openai');
 
 export default function Home({ data }) {
+
+  /*
+  1 API CALL APPROACH - PROBLEMS WITH TOKEN LIMIT
+  */
+
 	console.log(data);
+
+  function createResponseHTML() {
+    return {__html: data.choices[0].text}
+  }
+
+  let response = createResponseHTML(data);
+
+  console.log(response);
 
 	return (
 		<>
@@ -13,7 +26,7 @@ export default function Home({ data }) {
 				<link rel="icon" href="/favicon.ico" />
 			</Head>
 			<main>
-				<p>{data.choices[0].text}</p>
+				<div dangerouslySetInnerHTML={response}></div>
 			</main>
 		</>
 	);
@@ -44,16 +57,42 @@ export async function getServerSideProps() {
 
 	const openai = new OpenAIApi(configuration);
 
-	let maxTokens = 2000;
-	let maxWords = 20;
+	let maxTokens = 3600;
+	// let maxWords = 20;
+  let conversationTopic = "gun problem in the US";
+  let data;
 
-	let data = await openai.createCompletion({
-		model: 'text-davinci-003',
-		prompt: `Introduce yourself as ChatGPT in maximum ${maxWords} words. Each time unique. Keep context from previous requests.`,
-		max_tokens: maxTokens,
-	});
+  try {
+	data = await openai.createCompletion({
+    model: "text-davinci-003",
+    prompt: `From now on keep context and roleplay 2 different people arguing back and forth about a topic, 1 argument at a time. They have to have opposing views at the beginning. Each person has to react to the other one's argument and create a counterargument. The topic is \"${conversationTopic}\". Put each person's arguments in separate responses and wrap them in html <div> elements with two unique classes of \"person1 argument1\", \"person1 argument2\". Do not change the editing of the <div> or classes throughout the conversation, write them in lower case only. Use the HTML standard of writing <div> and adding classes to it. Do not join person and argument classes.  Do not create any conclusion elements with other classes. Each person has to say minimum 2 arguments, maximum 3 arguments.\nThe pattern of the conversation should be:\n<div class=\"person1 argument1\">Person 1: Argument1</div>\n<div class=\"person2 argument1\">Person 2: Argument 1 based on Person 1's Argument 1</div>\n<div class=\"person1 argument2\">Person 1: Response to Person 2's Argument 1</div>\nEtc.\nConclude the conversation with the two agreeing on an agrument. Close all html <div> tags.`,
+    temperature: 0.2,
+    max_tokens: maxTokens,
+    top_p: 1,
+    frequency_penalty: 2,
+    presence_penalty: 0.2,
+  });
+  } catch (error){
+    console.log(error);
+  }
 
 	data = stringify(data);
 
+
+
 	return { props: JSON.parse(data) };
 }
+
+/////////////////
+/*
+const response = await openai.createCompletion({
+  model: "text-davinci-003",
+  prompt: "From now on keep context and roleplay 2 different people arguing back and forth about a topic, 1 argument at a time. They have to have opposing views at the beginning. Each person has to react to the other one's argument and create a counterargument. The topic is \"slavery\". Put each person's arguments in separate responses and wrap them in html <div> elements with two unique classes of \"person1 argument1\", \"person1 argument2\". Do not change the editing of the <div> or classes throughout the conversation, write them in lower case only. Use the HTML standard of writing <div> and adding classes to it. Do not join person and argument classes.  Do not create any conclusion elements with other classes. Each person has to say minimum 3 arguments, maximum 6 arguments.\nThe pattern of the conversation should be:\n<div class=\"person1 argument1\">Person 1: Argument1</div>\n<div class=\"person2 argument1\">Person 2: Argument 1 based on Person 1's Argument 1</div>\n<div class=\"person1 argument2\">Person 1: Response to Person 2's Argument 1</div>\nEtc.\nConclude the conversation with the two agreeing on an agrument. Close all html <div> tags.\n\n<div class=\"person1 argument1\">Person 1: Slavery is an outdated and immoral practice that should be abolished.</div> \n<div class=\"person2 argument1\">Person 2: But slavery has been a part of human history since ancient times, so it's not something we can just get rid of overnight.</div> \n<div class=\"person1 argument2\">Person 1: That may be true, but the fact remains that slavery is wrong and unjust. We need to find ways to end this practice as soon as possible.</div> \n<div class=\"person2 argument2\">Person 2: I agree with you in principle, but there are practical considerations too. How do we ensure that those who have been enslaved for generations will have access to education or employment opportunities?</",
+  temperature: 0.2,
+  max_tokens: 3000,
+  top_p: 1,
+  frequency_penalty: 2,
+  presence_penalty: 0.2,
+});
+
+*/
