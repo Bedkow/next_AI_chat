@@ -69,7 +69,7 @@ export async function getServerSideProps() {
 
 	let maxTokens = 3600;
 	// let maxWords = 20;
-	let conversationTopic = "electric cars";
+	let conversationTopic = "nuclear fusion";
 	let data;
 	let isError = false;
 	let errorDevOnly = false;
